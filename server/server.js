@@ -31,49 +31,60 @@ function getFilePath(requestedPath) {
 
 // Membuat Server TCP
 const tcpServer = net.createServer((socket) => {
-    console.log('TCP client terhubung.');
+    // Buffer untuk menyimpan data yang diterima
+    let buffer = '';
 
-    let dataBuffer = '';
-
+    // Event ketika menerima data dari client
     socket.on('data', (data) => {
-        dataBuffer += data.toString();
-    });
+        buffer += data.toString();
 
-    socket.on('end', () => {
-        const requestedPath = dataBuffer.trim();
-        console.log(`TCP Client meminta file: ${requestedPath}`);
+        // Asumsikan bahwa client mengirimkan path file diikuti dengan newline
+        if (buffer.includes('\n')) {
+            const requestedPath = buffer.trim();
+            console.log(`TCP Client meminta file: ${requestedPath} dari ${socket.remoteAddress}:${socket.remotePort}`);
 
-        const filePath = getFilePath(requestedPath);
-        if (!filePath || !fs.existsSync(filePath)) {
-            const errorMsg = 'ERROR: File tidak ditemukan atau akses ditolak.\n';
-            socket.write(errorMsg, () => {
-                socket.end();
+            const filePath = getFilePath(requestedPath);
+            if (!filePath || !fs.existsSync(filePath)) {
+                const errorMsg = 'ERROR: File tidak ditemukan atau akses ditolak.\n';
+                socket.write(errorMsg, () => {
+                    console.error(`TCP: File tidak ditemukan atau akses ditolak: ${requestedPath}`);
+                    socket.end();
+                });
+                return;
+            }
+
+            // Membaca dan mengirimkan isi file
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    const errorMsg = 'ERROR: Gagal membaca file.\n';
+                    socket.write(errorMsg, () => {
+                        console.error(`TCP: Error membaca file: ${err.message}`);
+                        socket.end();
+                    });
+                    return;
+                }
+
+                // Mengirimkan isi file sebagai buffer
+                socket.write(data, () => {
+                    console.log(`TCP: Pengiriman file selesai: ${requestedPath}`);
+                    socket.end();
+                });
             });
-            console.error(`TCP: File tidak ditemukan atau akses ditolak: ${requestedPath}`);
-            return;
         }
-
-        // Mengirimkan isi file
-        const readStream = fs.createReadStream(filePath);
-        readStream.pipe(socket);
-
-        readStream.on('end', () => {
-            console.log(`TCP: Pengiriman file selesai: ${requestedPath}`);
-            socket.end();
-        });
-
-        readStream.on('error', (err) => {
-            console.error(`TCP: Error membaca file: ${err.message}`);
-            socket.end();
-        });
     });
 
+    // Event ketika koneksi ditutup
+    socket.on('close', () => {
+        // Opsional: Anda bisa menambahkan log jika diperlukan
+    });
+
+    // Event error
     socket.on('error', (err) => {
         console.error(`TCP Socket Error: ${err.message}`);
     });
 });
 
-// Mulai Mendengarkan TCP
+// Mulai mendengarkan TCP
 tcpServer.listen(TCP_PORT, () => {
     console.log(`TCP Server berjalan pada port ${TCP_PORT}`);
 });
