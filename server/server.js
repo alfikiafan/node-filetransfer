@@ -59,6 +59,7 @@ const tcpServer = net.createServer((socket) => {
 
         readStream.on('end', () => {
             console.log(`TCP: Pengiriman file selesai: ${requestedPath}`);
+            socket.end();
         });
 
         readStream.on('error', (err) => {

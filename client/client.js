@@ -41,13 +41,12 @@ function requestFileTCP(requestedPath, savePath) {
     return new Promise((resolve, reject) => {
         const client = new net.Socket();
         const startTime = process.hrtime();
+        let fileBuffer = Buffer.alloc(0);  // Buffer untuk menyimpan data yang diterima
 
         client.connect(TCP_PORT, SERVER_HOST, () => {
             console.log(`TCP: Mengirim permintaan untuk file: ${requestedPath}`);
             client.write(requestedPath + '\n');
         });
-
-        const writeStream = fs.createWriteStream(savePath);
 
         client.on('data', (data) => {
             if (data.toString().startsWith('ERROR')) {
@@ -57,19 +56,24 @@ function requestFileTCP(requestedPath, savePath) {
                 reject(new Error(data.toString()));
                 return;
             }
-            writeStream.write(data);
+            fileBuffer = Buffer.concat([fileBuffer, data]);  // Tambah data ke buffer
         });
 
         client.on('end', () => {
             const duration = getDurationInMilliseconds(startTime);
-            console.log(`TCP: File diterima dan disimpan sebagai ${savePath} dalam ${duration.toFixed(2)} ms`);
-            writeStream.end();
-            resolve();
+            fs.writeFile(savePath, fileBuffer, (err) => {  // Simpan data ke file setelah transfer selesai
+                if (err) {
+                    console.error(`TCP: Gagal menyimpan file: ${err.message}`);
+                    reject(err);
+                    return;
+                }
+                console.log(`TCP: File diterima dan disimpan sebagai ${savePath} dalam ${duration.toFixed(2)} ms`);
+                resolve();
+            });
         });
 
         client.on('error', (err) => {
             console.error(`TCP Client Error: ${err.message}`);
-            writeStream.close();
             fs.unlink(savePath, () => {}); // Hapus file yang mungkin telah dibuat
             reject(err);
         });
