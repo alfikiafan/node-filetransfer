@@ -19,7 +19,7 @@ if (!fs.existsSync(FILES_DIR)) {
 
 // Fungsi untuk memvalidasi dan mendapatkan path file
 function getFilePath(requestedPath) {
-    // Hindari traversal path dengan mengizinkan hanya file di dalam FILES_DIR
+    // Menghindari traversal path dengan mengizinkan hanya file di dalam FILES_DIR
     const safePath = path.normalize(requestedPath).replace(/^(\.\.(\/|\\|$))+/, '');
     const fullPath = path.join(FILES_DIR, safePath);
     if (fullPath.startsWith(FILES_DIR)) {
@@ -38,7 +38,7 @@ const tcpServer = net.createServer((socket) => {
     socket.on('data', (data) => {
         buffer += data.toString();
 
-        // Asumsikan bahwa client mengirimkan path file diikuti dengan newline
+        // Asumsi jika client mengirimkan path file diikuti dengan newline
         if (buffer.includes('\n')) {
             const requestedPath = buffer.trim();
             console.log(`TCP Client meminta file: ${requestedPath} dari ${socket.remoteAddress}:${socket.remotePort}`);
@@ -75,7 +75,7 @@ const tcpServer = net.createServer((socket) => {
 
     // Event ketika koneksi ditutup
     socket.on('close', () => {
-        // Opsional: Anda bisa menambahkan log jika diperlukan
+        console.log(`TCP Client ${socket.remoteAddress}:${socket.remotePort} terputus`);
     });
 
     // Event error
@@ -122,7 +122,7 @@ udpServer.on('message', (msg, rinfo) => {
             return;
         }
 
-        // Karena UDP memiliki batas ukuran paket, kirim dalam beberapa paket jika diperlukan
+        // Karena UDP memiliki batas ukuran paket, pengiriman bisa dilakukan dalam beberapa paket
         const MAX_UDP_SIZE = 60000; // 60 KB per paket
         const totalSize = data.length;
         let offset = 0;
@@ -141,7 +141,6 @@ udpServer.on('message', (msg, rinfo) => {
                     return;
                 }
                 offset = end;
-                // Kirim chunk berikutnya
                 sendChunk();
             });
         }

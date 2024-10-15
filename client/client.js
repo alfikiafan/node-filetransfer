@@ -52,7 +52,7 @@ function requestFileTCP(requestedPath, savePath) {
             if (data.toString().startsWith('ERROR')) {
                 console.error(`TCP: ${data.toString().trim()}`);
                 client.destroy();
-                fs.unlink(savePath, () => {}); // Hapus file yang mungkin telah dibuat
+                fs.unlink(savePath, () => {}); // Menghapus file yang mungkin telah dibuat
                 reject(new Error(data.toString()));
                 return;
             }
@@ -74,7 +74,7 @@ function requestFileTCP(requestedPath, savePath) {
 
         client.on('error', (err) => {
             console.error(`TCP Client Error: ${err.message}`);
-            fs.unlink(savePath, () => {}); // Hapus file yang mungkin telah dibuat
+            fs.unlink(savePath, () => {}); // Menghapus file yang mungkin telah dibuat
             reject(err);
         });
     });
@@ -122,7 +122,7 @@ function requestFileUDP(requestedPath, savePath) {
                     client.close();
                     resolve();
                 });
-            }, 1000); // 1 detik timeout, sesuaikan jika perlu
+            }, 1000); // 1 detik timeout
         });
 
         // Timeout keseluruhan
@@ -137,7 +137,7 @@ function requestFileUDP(requestedPath, savePath) {
                 console.log(`UDP: File diterima dan disimpan sebagai ${savePath} dalam ${duration.toFixed(2)} ms`);
                 resolve();
             });
-        }, 5000); // 5 detik timeout, sesuaikan jika perlu
+        }, 5000); // 5 detik timeout
 
         client.on('error', (err) => {
             console.error(`UDP Client Error: ${err.message}`);
